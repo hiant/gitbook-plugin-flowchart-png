@@ -1,15 +1,22 @@
-<script src="../node_modules/gitbook-plugin-plantflowchart/book/raphael-min.js"></script>
-<script src="../node_modules/gitbook-plugin-plantflowchart/book/flowchart-latest.js"></script>
-<script>
-    window.onload = function() {
-        var code = document.getElementById("code").value;
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <script src="../node_modules/gitbook-plugin-flowchart-png/book/raphael-min.js"></script>
+        <script src="../node_modules/gitbook-plugin-flowchart-png/book/flowchart-latest.js"></script>
+        <script>
+
+            window.onload = function () {
+ var code = document.getElementById("code").value;
         var chart = flowchart.parse(code);
         chart.drawSVG('canvas');
-    };
-</script>
-<div>
-    <textarea id="code" hidden>
+            };
+        </script>
+    </head>
+    <body>
+        <div><textarea id="code" hidden>
 {{ content }}
-    </textarea>
-</div>
-<div id="canvas"></div>
+        </textarea></div>
+        <div id="canvas"></div>
+    </body>
+</html>

@@ -20,11 +20,11 @@ function processBlockList(page, flowchartPath) {
     while ((match = blockRegex.exec(page.content))) {
         var indexBaseName = baseName + '_' + (index++);
         var relativePath = dirPath + '/' + indexBaseName;
-        var pngOutPath = outputBasePath + relativePath + '.png';
+        var pngOutPath = outputBasePath + relativePath + '_flowchart.png';
         var assetsPathPrefix = basePath + relativePath;
-        var linkPath = indexBaseName + '.png';
-        var flowchartPath = assetsPathPrefix + '.flowchart';
-        var pngPath = assetsPathPrefix + '.png';
+        var linkPath = indexBaseName + '_flowchart.png';
+        var flowchartPath = assetsPathPrefix + '.html';
+        var pngPath = assetsPathPrefix + '_flowchart.png';
         pngMap[pngPath] = pngOutPath;
         var rawBlock = match[0];
         var blockContent = match[1];
@@ -49,9 +49,11 @@ function processBlockList(page, flowchartPath) {
         console.log('%j-> %j-> %j %j', page.path, flowchartPath, pngPath, isUpdateImageRequired);
         if (isUpdateImageRequired) {
             fse.mkdirsSync(path.dirname(flowchartPath));
-            jst.renderFile(pluginPath + '/book/template.html', {content: 'blockContent'}, function(err, ctx) {
-                fse.outputFileSync(flowchartPath, blockContent);
-            }
+            jst.renderFile(pluginPath + '/book/template.html', {
+                content: blockContent
+            }, function(err, ctx) {
+                fse.outputFileSync(flowchartPath, ctx);
+            });
             fse.outputFileSync(flowchartPath + '.sum', md5sum, encoding = 'utf-8');
             flowchartList.push(flowchartPath);
         }
@@ -70,18 +72,20 @@ module.exports = {
             if (flowchartList.length > 0) {
                 var phantomjs = pluginPath + '/book/phantomjs';
                 var rasterize = pluginPath + '/book/rasterize.js';
-                for(var flowchart in flowchartList){
-                try {
-                    var dirPath = path.dirname(flowchart);
-                    var basename = path.basename(flowchart);
-                    var exe = spawnSync(phantomjs, [rasterize, flowchart, dirPath + '/' + basename + '.png']);
-                    console.log(exe.stdout.toString());
-                } catch (e) {
-                    console.log(e);
-                }
+                for (var i = 0; i < flowchartList.length; i++) {
+                    try {
+                        var flowchart = flowchartList[i];
+                        var dirPath = path.dirname(flowchart);
+                        var basename = path.basename(flowchart, '.html');
+                        var pngPath = dirPath + '/' + basename + '_flowchart.png';
+                        var exe = spawnSync(phantomjs, [rasterize, flowchart, pngPath]);
+                        console.log(exe.stdout.toString());
+                    } catch (e) {
+                        console.log(e);
+                    }
                 }
             }
-            for(var pngPath in pngMap) {
+            for (var pngPath in pngMap) {
                 fse.copySync(pngPath, pngMap[pngPath]);
             }
         }

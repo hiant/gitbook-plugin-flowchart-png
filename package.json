@@ -19,6 +19,9 @@
     "gitbook": "*"
   },
   "dependencies": {
+    "walk": ">= 2.3.9",
+    "crypto": ">= 0.0.3",
+    "fs-extra": ">= 0.30.0",
     "jst": ">= 0.0.13"
   }
 }
