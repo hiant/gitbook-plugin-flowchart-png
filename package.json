@@ -19,6 +19,6 @@
     "gitbook": "*"
   },
   "dependencies": {
-    "jst": ">= 0.0.14"
+    "jst": ">= 0.0.13"
   }
 }
