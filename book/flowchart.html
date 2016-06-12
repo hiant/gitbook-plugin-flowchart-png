@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="zh-cmn-Hans">
+<head>
+<meta charset="utf-8">
+<script src="{{ path }}/raphael-min.js"></script>
+<script src="{{ path }}/flowchart-latest.js"></script>
+<script>
+
+window.onload = function () {
+var code = document.getElementById("code").value;
+var chart = flowchart.parse(code);
+chart.drawSVG('canvas');
+};
+</script>
+</head>
+<body>
+<div><textarea id="code" hidden>
+{{ content }}
+</textarea></div>
+<div id="canvas"></div>
+</body>
+</html>

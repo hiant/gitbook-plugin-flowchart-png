@@ -1,6 +1,6 @@
 # gitbook-plugin-flowchart-png
 
-使用 flowchart.js 生成svg，使用phantomjs进行截屏
+使用 mermaid.js、flowchart.js 生成svg，使用phantomjs进行截屏
 
 ## 使用说明
 
@@ -16,6 +16,12 @@
   `$gitbook install`
 
 ## 语法说明
+
+### mermaid.js 语法说明
+
+参见：[http://knsv.github.io/mermaid/](http://knsv.github.io/mermaid/)
+
+### flowchart.js 语法说明
 
     ```flowchart
     st=>start: Start|past
@@ -34,6 +40,7 @@
     c2(yes)->io->e
     c2(no)->op2->e
     ```
+
 ### 定义元素
 
 语法是：tag=>type: content:>url 
