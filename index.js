@@ -1,34 +1,31 @@
-const spawnSync = require('child_process').spawnSync;
-var fs = require('fs')
-var fse = require('fs-extra')
-var crypto = require('crypto');
-var path = require('path');
-var jst = require('jst');
-var config = [{
+const execFile = require('child_process').execFile;
+const fs = require('fs')
+const fse = require('fs-extra')
+const crypto = require('crypto');
+const path = require('path');
+const jst = require('jst');
+const pluginPath = 'node_modules/gitbook-plugin-flowchart-png/book/';
+const phantomjs = pluginPath + 'phantomjs';
+const rasterize = pluginPath + 'rasterize.js';
+const config = [{
     keyword: "flowchart",
-    blockRegex: /^```flowchart((.*[\r\n]+)+?)?```$/im
+    blockRegex: /^```flowchart((.*[\r\n]+)+?)?```$/im,
+    template: fs.readFileSync(pluginPath + 'flowchart.html', 'utf-8')
 }, {
     keyword: "mermaid",
-    blockRegex: /^```mermaid((.*[\r\n]+)+?)?```$/im
+    blockRegex: /^```mermaid((.*[\r\n]+)+?)?```$/im,
+    template: fs.readFileSync(pluginPath + 'mermaid.html', 'utf-8')
 }]
-
-var outputBasePath;
-
-var pluginPath = 'node_modules/gitbook-plugin-flowchart-png/book/';
-var phantomjs = pluginPath + 'phantomjs';
-var rasterize = pluginPath + 'rasterize.js';
-var todo = {};
 
 function processBlockList(page) {
     var dirPath = path.dirname(page.path);
     var baseName = path.basename(page.path, '.md');
-
-    for(var i=0, len=config.length; i<len; i++){
+    for (var i = 0, len = config.length; i < len; i++) {
         var match;
         var index = 0;
         var keyword = config[i].keyword;
         var blockRegex = config[i].blockRegex;
-        var template = fs.readFileSync(pluginPath + keyword + '.html', 'utf-8').trim();
+        var template = config[i].template;
         var tempBase = '.' + keyword;
         // create the folder for the temp output
         fse.mkdirsSync(tempBase);
@@ -37,9 +34,9 @@ function processBlockList(page) {
             var linkPath = indexBaseName + '_' + keyword + '.png';
             var contentPath = tempBase + '/' + dirPath + '/' + indexBaseName + '.content';
             var tempDir = tempBase + '/' + dirPath + '/';
-            var htmlPath = tempDir+ indexBaseName + '.html';
+            var htmlPath = tempDir + indexBaseName + '.html';
             var tempPath = htmlPath + '.png';
-            var pngPath = outputBasePath + '/' + dirPath + '/' + linkPath;
+            var pngPath = this.output.root() + '/' + dirPath + '/' + linkPath;
             var rawBlock = match[0];
             var blockContent = match[1];
             var isUpdateImageRequired = !fs.existsSync(contentPath);
@@ -59,21 +56,23 @@ function processBlockList(page) {
             if (!isUpdateImageRequired) {
                 isUpdateImageRequired = !fs.existsSync(tempPath);
             }
-            //flowchart
-            console.log('%j-> %j-> %j %j', page.path, contentPath, pngPath, isUpdateImageRequired);
-            todo[pngPath] = {
-                update: isUpdateImageRequired,
-                path: htmlPath,
-                tempPath: tempPath
-            };
+            
+            // console.log('%j-> %j-> %j %j', page.path, contentPath, pngPath, isUpdateImageRequired);
             if (isUpdateImageRequired) {
                 fse.mkdirsSync(path.dirname(contentPath));
-                fse.outputFileSync(contentPath, blockContent, encoding = 'utf-8');
-                fse.outputFileSync(contentPath + '.sum', md5sum, encoding = 'utf-8');
+                fse.outputFile(contentPath, blockContent, encoding = 'utf-8', function(err) {
+                    if (err) throw err;
+                });
+                fse.outputFile(contentPath + '.sum', md5sum, encoding = 'utf-8', function(err) {
+                    if (err) throw err;
+                });
                 fse.outputFileSync(htmlPath, jst.render(template, {
                     path: path.relative(tempDir, pluginPath).replace(/\\/g, "/"),
                     content: blockContent
                 }));
+                screenshots(htmlPath, tempPath, pngPath);
+            } else {
+                fse.copySync(tempPath, pngPath);
             }
             page.content = page.content.replace(rawBlock, '![](' + linkPath + ')');
         }
@@ -82,31 +81,14 @@ function processBlockList(page) {
 }
 
 function screenshots(htmlPath, tempPath, pngPath) {
-    try{
-        var exe = spawnSync(phantomjs, [rasterize, htmlPath, tempPath]);
-        console.log(exe.stdout.toString());
-    } catch (e) {
-        console.error(e);
-    }
-    fse.copySync(tempPath, pngPath);
+    execFile(phantomjs, [rasterize, htmlPath, tempPath], function(err, stdout, stderr) {
+        if (err) throw err;
+        fse.copySync(tempPath, pngPath);
+    });
 }
 
 module.exports = {
     hooks: {
-        "init": function() {
-            outputBasePath = this.output.root() + '/';
-        },
-        // Before parsing markdown
-        "page:before": processBlockList,
-        "finish:before": function() {
-            for (var pngPath in todo) {
-                var item = todo[pngPath];
-                if (item.update) {
-                    screenshots(item.path, item.tempPath, pngPath);
-                } else {
-                    fse.copySync(item.tempPath, pngPath);
-                }
-            }
-        }
+        "page:before": processBlockList
     }
 };
