@@ -1,4 +1,4 @@
-const execFile = require('child_process').execFile;
+const execFileSync = require('child_process').execFileSync;
 const fs = require('fs')
 const fse = require('fs-extra')
 const crypto = require('crypto');
@@ -81,10 +81,8 @@ function processBlockList(page) {
 }
 
 function screenshots(htmlPath, tempPath, pngPath) {
-    execFile(phantomjs, [rasterize, htmlPath, tempPath], function(err, stdout, stderr) {
-        if (err) throw err;
-        fse.copySync(tempPath, pngPath);
-    });
+    execFileSync(phantomjs, [rasterize, htmlPath, tempPath]);
+    fse.copySync(tempPath, pngPath);
 }
 
 module.exports = {
